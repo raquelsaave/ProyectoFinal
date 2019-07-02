@@ -17,30 +17,6 @@ sequelize
 });
 
 
-// const User = UserModel(sequelize)
-// // BlogTag will be our way of tracking relationship between Blog and Tag models
-// // each Blog can have multiple tags and each Tag can have multiple blogs
-// const BlogTag = sequelize.define('blog_tag', {});
-// const Blog = PostModel(sequelize);
-// const Tag = TagModel(sequelize);
-// const Comment = CommentModel(sequelize);
-// // const BlogComment = sequelize.define('blog_comment', {});
-
-// // Blog.belongsToMany(Comment,{ through: BlogComment, unique: true});
-// // Comment.belongsToMany( Blog, { through : BlogComment, unique: true});
-
-// Blog.belongsToMany(Tag, { through: BlogTag, unique: false })
-// Tag.belongsToMany(Blog, { through: BlogTag, unique: false })
-
-// // Comment.belongsTo(User);
-// Blog.belongsTo(User);
-
-
-// //otro tipo
-// Comment.belongsTo(Blog);
-// Blog.hasMany(Comment);
-// User.hasMany(Blog);
-
 sequelize.sync({ force: false })
 .then(() => {
     console.log(`Database & tables created!`)
@@ -49,4 +25,20 @@ sequelize.sync({ force: false })
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-module.exports = db;
+
+// //Models/tables
+ db.users = require('./models/UserModel');  
+ db.comments = require('./models/CommentModel');  
+ db.posts = require('./models/PostModel');
+
+ db.users = db.users(sequelize);
+ db.comments = db.comments(sequelize);
+ db.posts = db.posts(sequelize);
+
+// //Relations
+db.comments.belongsTo(db.posts);  
+db.posts.hasMany(db.comments);  
+db.posts.belongsTo(db.users);  
+db.users.hasMany(db.posts);
+
+module.exports = db;  

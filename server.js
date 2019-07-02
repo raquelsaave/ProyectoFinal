@@ -2,10 +2,10 @@ const path = require('path');
 const cors = require("cors"); 
 // Dependencias
 var bodyParser = require('body-parser');
-var Sequelize = require('sequelize');
+// var Sequelize = require('sequelize');
 
 // Controllers
-const Controller = require('./app_server/controller/controller');
+// const Controller = require('./app_server/controller/controller');
 
 // Models
 const UserModel = require('./app_server/models/UserModel');
@@ -13,7 +13,7 @@ const PostModel = require('./app_server/models/PostModel')
 const TagModel = require('./app_server/models/TagModel');
 const CommentModel = require('./app_server/models/CommentModel');
 
-var Users = require("./app_server/controller/controller");
+var Controller = require("./app_server/controller/controller");
 
 // Inicializamos express (app)
 var express = require('express');
@@ -26,7 +26,7 @@ app.use(
     bodyParser.urlencoded({extended:false})
 )
 // app.use(express.static(path.join(__dirname, 'blog_cliente/build')));
-app.use("/users",Users);
+app.use("/users",Controller);
 
 
 // const users = express.Router()

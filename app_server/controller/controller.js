@@ -1,135 +1,232 @@
 const express = require("express");
 const users = express.Router()
+// const posts = express.Router();
+// const comments = express.Router();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bycrypt = require("bcrypt");
-
-const User = require( "../models/UserModel");
+const db = require("../db")
+// const User = require("../models/UserModel");
 users.use(cors());
 
-const Posts = require("../models/UserModel");
+// const Post = require("../models/PostModel");
+// posts.use(cors());
+
+// const Comment = require("../models/CommentModel");
+// comments.use(cors());
 
 process.env.SECRET_KEY = 'secret'
 
 // module.exports = (app,users, User, Blog, Tag, Comment) => {
 
-    // REGISTRO
+// REGISTRO
 
-    // Registrar un nuevo Usuario
-    users.post('/register', (req, res) => {
-        console.log(req.body)
-        const userData = {
-            name: req.body.name,
-            lastname: req.body.lastname,
-            email: req.body.email,
-            username: req.body.username,
-            password: req.body.password
+// Registrar un nuevo Usuario
+users.post('/register', (req, res) => {
+    console.log(req.body)
+    const userData = {
+        name: req.body.name,
+        lastname: req.body.lastname,
+        email: req.body.email,
+        username: req.body.username,
+        password: req.body.password
+    }
+    // Verificar si usuario no existe
+    db.users.findOne({
+        where: {
+            email: req.body.email
         }
-        // Verificar si usuario no existe
-        User.findOne({
-            where: {
-                email: req.body.email
-            }
-        }).then(user => {
-            if (!user) {
-                // Si no existe, hacemos la encriptacion de password
-                // y creamos usuairo
-                bycrypt.hash(req.body.password,10,(err,hash) => {
-                    userData.password = hash
+    }).then(user => {
+        if (!user) {
+            // Si no existe, hacemos la encriptacion de password
+            // y creamos usuairo
+            bycrypt.hash(req.body.password, 10, (err, hash) => {
+                userData.password = hash
 
-                    User.create(userData)
-                    .then( user => {
-                        res.json({status: user.email + 'registered'})
+                db.users.create(userData)
+                    .then(user => {
+                        res.json({ status: user.email + 'registered' })
                     }).catch(err => {
-                        res.send('error: ' + err) 
+                        res.send('error: ' + err)
                     })
-                })
-            } else {
-                res.json({ error: 'El usuario ya existe!' })
-                console.log('El usuario ya existe!')
-            }
-        }).catch(err => {
-            res.send('error: ' + err);
-        })
+            })
+        } else {
+            res.json({ error: 'El usuario ya existe!' })
+            console.log('El usuario ya existe!')
+        }
+    }).catch(err => {
+        res.send('error: ' + err);
     })
+})
 
-    // LOGIN
+// LOGIN
 
-    users.post('/login', (req, res) => {
-        // Verificar si usuario no existe
-        User.findOne({
-            where: {
-                email: req.body.email
-            }
-        }).then(user => {
-            if (bycrypt.compareSync(req.body.password, user.password)) {
-                let token = jwt.sign(user.dataValues, process.env.SECRET_KEY, {
-                    expiresIn: 1440
-                })
-                res.send(token)
-                console.log('Enviado de controller login: ' +token)
-            } else {
-                res.status(400);
-                res.json({ error: 'El usuario no existe!' })
-            }
-        }).catch(err => {
+users.post('/login', (req, res) => {
+    // Verificar si usuario no existe
+    db.users.findOne({
+        where: {
+            email: req.body.email
+        }
+    }).then(user => {
+        if (bycrypt.compareSync(req.body.password, user.password)) {
+            let token = jwt.sign(user.dataValues, process.env.SECRET_KEY, {
+                expiresIn: 1440
+            })
+            res.send(token)
+            console.log('Enviado de controller login: ' + token)
+        } else {
             res.status(400);
-            res.send('error: ' + err);
-        })
+            res.json({ error: 'El usuario no existe!' })
+        }
+    }).catch(err => {
+        res.status(400);
+        res.send('error: ' + err);
     })
+})
 
-    // PROFILE
+// PROFILE
 
-    users.get('/profile', (req, res, next) => {
+users.get('/profile', (req, res, next) => {
 
-        let token = req.headers['x-access-token'] || req.headers['authorization']; // Express headers are auto converted to lowercase
-        if (token.startsWith('Bearer ')) {
-            // Remove Bearer from string
-            token = token.slice(7, token.length);
-          }
-        
-          if (token) {
-            jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
-              if (err) {
+    let token = req.headers['x-access-token'] || req.headers['authorization']; // Express headers are auto converted to lowercase
+    if (token.startsWith('Bearer ')) {
+        // Remove Bearer from string
+        token = token.slice(7, token.length);
+    }
+
+    if (token) {
+        jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+            if (err) {
                 console.log(err)
                 return res.json({
-                  success: false,
-                  message: 'Token is not valid'
+                    success: false,
+                    message: 'Token is not valid'
                 });
-              } else {
+            } else {
                 req.decoded = decoded;
                 console.log(req.decoded)
                 next();
-              }
-            });
-          } else {
-            console.log('Auth token is not supplied')
-            return res.json({
-              success: false,
-              message: 'Auth token is not supplied'
-            });
-          }
-    
-        
-        // var decoded = jwt.verify(req.headers['authorization'], process.env.SECRET_KEY)
-        // console.log('decoded de controller: ' + decoded)
-        User.findOne({
-            where: {
-                id: decoded.id
             }
-        }).then(user => {
-            if (user) {
-                res.json(user)
-            } else {
-                res.send('El usuario no existe')
-            }
-        }).catch(err => {
-            res.send('error : ' + err)
-        })
+        });
+    } else {
+        console.log('Auth token is not supplied')
+        return res.json({
+            success: false,
+            message: 'Auth token is not supplied'
+        });
+    }
+    // var decoded = jwt.verify(req.headers['authorization'], process.env.SECRET_KEY)
+    // console.log('decoded de controller: ' + decoded)
+    db.users.findOne({
+        where: {
+            id: decoded.id
+        }
+    }).then(user => {
+        if (user) {
+            res.json(user)
+        } else {
+            res.send('El usuario no existe')
+        }
+    }).catch(err => {
+        res.send('error : ' + err)
     })
+});
 
-   
-  
+// CREATE POST
+
+users.post('/createpost', (req, res) => {
+    console.log(req.body)
+    const blogData = {
+        title: req.body.title,
+        opener: req.body.opener,
+        content: req.body.content,
+        image: req.body.image,
+        tag: req.body.tag
+    }
+    // Verificar si titulo no existe
+    db.posts.findOne({
+        where: {
+            title: req.body.title
+        }
+    }).then(post => {
+        if (!post) {
+            db.posts.create(blogData)
+                .then(post => {
+                    res.json({ status: post.title + '   publicado' })
+                }).catch(err => {
+                    res.send('error: ' + err)
+                })
+
+        } else {
+            res.json({ error: 'El titulo ya existe, intentalo de nuevo!' })
+            console.log('El usuario ya existe!')
+        }
+    }).catch(err => {
+        res.send('error: ' + err);
+    })
+})
+
+// GET POSTS FOR ONE USER
+users.get('/myposts', (req, res, next) => {
+    // let token = req.headers['x-access-token'] || req.headers['authorization']; // Express headers are auto converted to lowercase
+    // if (token.startsWith('Bearer ')) {
+    //     // Remove Bearer from string
+    //     token = token.slice(7, token.length);
+    // }
+
+    // if (token) {
+    //     jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+    //         if (err) {
+    //             console.log(err)
+    //             return res.json({
+    //                 success: false,
+    //                 message: 'Token is not valid'
+    //             });
+    //         } else {
+    //             req.decoded = decoded;
+    //             console.log(req.decoded)
+    //             next();
+    //         }
+    //     });
+    // } else {
+    //     console.log('Auth token is not supplied')
+    //     return res.json({
+    //         success: false,
+    //         message: 'Auth token is not supplied'
+    //     });
+    // }
+    // var decoded = jwt.verify(req.headers['authorization'], process.env.SECRET_KEY)
+    // console.log('decoded de controller: ' + decoded)
+    db.posts.findAll({
+                    order: [['createdAt', 'DESC']]
+                }).then(posts => {
+                    res.send({ posts });
+                    res.status(200);
+                    console.log('Sent list of items')
+                }).catch((err) => {
+                    res.status(500);
+                    console.log(err);
+                });
+
+})
+
+
+
+
+// // GET ALL POSTS 
+// users.get('/explorar', (req, res) => {
+//         db.posts.findAll({
+//             order: [['createdAt', 'DESC']]
+//         }).then(posts => {
+//             res.send({ posts });
+//             res.status(200);
+//             console.log('Sent list of items')
+//         }).catch((err) => {
+//             res.status(500);
+//             console.log(err);
+//         });
+// })
+
 
 module.exports = users;
 
@@ -309,4 +406,4 @@ module.exports = users;
     //     });
 
     // });
-// }
+    // } */
