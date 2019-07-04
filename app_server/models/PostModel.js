@@ -36,6 +36,10 @@ module.exports = (sequelize) => {
             type: Sequelize.STRING,
             allownull: false
         },
+        author: {
+            type: Sequelize.STRING,
+            allownull: false
+        },
         opener: {
             type: Sequelize.STRING,
             allownull: false
