@@ -206,7 +206,7 @@ users.post('/myposts', (req, res) => {
 })
 
 
-// GET POSTS FOR ONE USER
+// GET POSTS 
 users.get('/myposts', (req, res, next) => {
     db.posts.findAll({
         order: [['createdAt', 'DESC']]
@@ -259,30 +259,120 @@ users.patch('/myposts/:blogPostId', (req, res) => {
     }).catch((err) => { res.status(500); console.log(err) });
 });
 
- // find blogs belonging to one user or all blogs
-users.get('/myposts/:userId', (req, res) => {
-        let query;
-        if (req.params.userId) {
-            query = db.posts.findAll({
-                order: [['createdAt', 'DESC']], include: [
-                    { model: db.users, where: { id: req.params.userId } },
-                    { model: db.comments }
-                ]
-            })
-        } else {
-            query = db.posts.findAll({ order: [['createdAt', 'DESC']], include: [db.comments, db.users] })
+// find blogs belonging to one user or all blogs
+// users.get('/myposts/:userId', (req, res) => {
+//     let query;
+//     if (req.params.userId) {
+//         query = db.posts.findAll({
+//             order: [['createdAt', 'DESC']], include: [
+//                 { model: db.users, where: { id: req.params.userId } },
+//                 { model: db.comments }
+//             ]
+//         })
+//     } else {
+//         query = db.posts.findAll({ order: [['createdAt', 'DESC']], include: [db.comments, db.users] })
+//     }
+//     return query.then(blogs => res.json(blogs))
+// })
+
+// find one blog post
+users.get('/myposts/full/:blogPostId', (req, res) => {
+    db.posts.findOne({
+        where: {
+            id: req.params.blogPostId
         }
-        return query.then(blogs => res.json(blogs))
+    }).then(post => {
+        if (post) {
+            res.send(post)
+            console.log('Sent blog info: ' + post)
+        } else {
+            res.send('El usuario no existe')
+        }
+    }).catch(err => console.log(err))
 })
 
- // find blogs belonging to one user or all blogs
-users.get('/myposts/full/:blogPostId', (req, res) => {
-        db.posts.findOne({ 
-            where: { id: req.params.blogPostId }
+// CREATE A COMMENT
+
+users.post('/myposts/full', (req, res) => {
+    console.log(req.body)
+    const comment = {
+        content: req.body.content,
+        blogPostId: req.body.blogPostId,
+        author: req.body.author
+    }
+    // Verificar si titulo no existe
+    db.comments.create(comment)
+        .then(comment => {
+            res.json({ status: comment.content + '   publicado' })
+        }).catch(err => {
+            res.send('error: ' + err)
         })
-        .then((resp) => { res.json(resp)})
-        .catch(err => console.log(err));
+})
+
+// SHOW POSTS FROM ONE USER!
+users.get('/myposts/:userId', (req, res) => {
+    db.posts.findAll({
+        where: {
+            userId: req.params.userId
+        }
+    }).then(posts => {
+        if (posts) {
+            res.send(posts)
+            console.log('Sent blog info: ' + posts)
+        } else {
+            res.send('No hay posts')
+        }
+    }).catch(err => console.log(err))
+})
+
+// SHOW COMMENTS FROM ONE BLOG 
+
+
+users.get('/myposts/full/comments/:blogPostId', (req, res) => {
+    db.comments.findAll({
+        where: {
+            blogPostId: req.params.blogPostId
+        }
+    }).then(post => {
+        if (post) {
+            res.send(post)
+            console.log('Sent blog info: ' + post)
+        } else {
+            res.send('No hay comentarios')
+        }
+    }).catch(err => console.log(err))
+})
+
+// DELETE A COMMENT
+
+users.delete('/myposts/full/comments/:blogPostId/:commentId', (req, res) => {
+    // const body = req.body 
+    db.comments.destroy({
+        where: {
+            id: req.params.commentId
+        }
+    }).then(resp => {
+        res.send({ message: 'Comentario eliminado' })
+        res.status(204);
+        console.log(resp);
+    }).catch(err => {
+        res.status(400)
+        res.send({ message: 'Blog Post no existe' })
+        console.log("error=" + err);
+    });
 });
+
+
+//  Encontrar blogs por su tag!
+users.get('/myposts/explore/buscar/:tagname', (req, res) => {
+        db.posts.findAll({
+            order: [['createdAt', 'DESC']],
+            where: {
+                tag: req.params.tagname
+            }
+        }).then(blogs => res.json(blogs))
+        .catch(err => console.log(err))
+})
 
 //  // find blogs belonging to one user or all blogs
 // users.get('/myposts/:userId', (req, res) => {
@@ -455,60 +545,5 @@ module.exports = users;
     //         .then(blogs => res.json(blogs))
     // })
 
-    // // create a comment
-    // app.post('/api/blogs/comment/:blogpostId?', (req, res) => {
-    //     const body = req.body
-    //     // const comment = body.comment.map(comment => Tag.Create({ where: { content: tag.name }, defaults: { content: tag.name }})
-    //     // .spread((tag, created) => tag))
 
-    //     Blog.findOne({ where: { id: req.params.blogpostId } })
-    //         .then(() => {
-    //             Comment.create(body);
-    //             res.status(201);
-    //             console.log('Comment created!')
-    //         })
-    //         // }.then(blog => Promise.all(comment).then(storedTags => blog.addComments(storedComments)).then(() => blog))
-    //         // .then(blog => Blog.findOne({ where: {id: blog.id}, include: [User, Comment]}))
-    //         .then(blogWithAssociations => res.json(blogWithAssociations))
-    //         .catch(err => {
-    //             res.status(400).json({ err: `Blog with id = [${body.blopostId}] doesn\'t exist.` });
-    //             console.log(err)
-    //         });
-    // })
 
-    // // Borra un blog post
-    // app.delete('/api/blogs/delete/:blogpostId', (req, res) => {
-    //     // const body = req.body 
-    //     Blog.destroy({
-    //         where: {
-    //             id: req.params.blogpostId
-    //         }
-    //     }).then(resp => {
-    //         res.send({ message: 'Blog Post eliminado' })
-    //         res.status(204);
-    //         console.log(resp);
-    //     }).catch(err => {
-    //         res.status(400)
-    //         res.send({ message: 'Blog Post no existe' })
-    //         console.log("error=" + err);
-    //     });
-    // });
-
-    // // Borrar un comentario 
-    // app.delete('/api/blogs/comment/delete/:commentId?', (req, res) => {
-    //     // const body = req.body 
-    //     Comment.destroy({
-    //         where: {
-    //             id: req.params.commentId
-    //         }
-    //     }).then(resp => {
-    //         res.send({ message: 'comentario eliminado' })
-    //         console.log(resp);
-    //     }).catch(err => {
-    //         res.status(400)
-    //         res.send({ message: 'comentario no existe' })
-    //         console.log("error=" + err);
-    //     });
-
-    // });
-    // } */

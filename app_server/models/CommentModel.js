@@ -31,14 +31,17 @@ module.exports = (sequelize) => {
         content: {
             type: Sequelize.STRING,
             allownull: false
+        },
+        author: {
+            type: Sequelize.STRING,
+            allownull: false
         }
-
     },
     {
         tableName: 'comments',
         createdAt: 'created_at',
         updatedAt: 'updated_at',
-        deletedAt: 'deteled_at',
+        deletedAt: 'deleted_at',
         paranoid: true,
         timestamps: true,
     })
