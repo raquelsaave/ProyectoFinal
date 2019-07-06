@@ -278,6 +278,7 @@ users.patch('/myposts/:blogPostId', (req, res) => {
 // find one blog post
 users.get('/myposts/full/:blogPostId', (req, res) => {
     db.posts.findOne({
+        order: [['createdAt', 'DESC']],
         where: {
             id: req.params.blogPostId
         }
