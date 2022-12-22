@@ -19,6 +19,6 @@
     "nodemon": "^1.18.14",
     "cors": "^2.8.4",
     "bcrypt": "^3.0.0",
-    "jsonwebtoken": "^7.4.2"
+    "jsonwebtoken": "^9.0.0"
   }
 }
